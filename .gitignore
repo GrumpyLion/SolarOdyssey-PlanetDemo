@@ -1,0 +1,10 @@
+/.vs
+/.git
+/Solution
+/Bin
+/Temp
+Settings.json
+/imgui.ini
+/AssetBin
+*.bin
+/Settings.yml

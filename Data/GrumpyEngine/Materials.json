@@ -1,0 +1,41 @@
+[
+    {
+        "name": "Error",
+        "vs": "Data/GrumpyEngine/Shaders/Error.vs",
+        "fs": "Data/GrumpyEngine/Shaders/Error.fs"
+    },
+    {
+        "name": "Wireframe",
+        "vs": "Data/GrumpyEngine/Shaders/Wireframe.vs",
+        "fs": "Data/GrumpyEngine/Shaders/Wireframe.fs"
+    },
+    {
+        "name": "Unlit",
+        "vs": "Data/GrumpyEngine/Shaders/Unlit.vs",
+        "fs": "Data/GrumpyEngine/Shaders/Unlit.fs",
+        "textures":
+          [{ "name": "uTexture", "location": "Data/GrumpyEngine/Textures/Checker.png", "filter": "linear", "wrap": "clamp" }]
+    },
+    {
+        "name": "Default",
+        "vs": "Data/GrumpyEngine/Shaders/Default.vs",
+        "fs": "Data/GrumpyEngine/Shaders/Default.fs",
+        "textures":
+          [{ "name": "uTexture", "location": "Data/GrumpyEngine/Textures/Checker.png", "filter": "linear", "wrap": "clamp" }]
+    },
+    {
+        "name": "SpotLight Depth",
+        "vs": "Data/GrumpyEngine/Shaders/SpotLight.vs",
+        "fs": "Data/GrumpyEngine/Shaders/SpotLight.fs"
+    },
+    {
+        "name": "DirectionalLight Depth",
+        "vs": "Data/GrumpyEngine/Shaders/DirectionalLight.vs",
+        "fs": "Data/GrumpyEngine/Shaders/DirectionalLight.fs"
+    },
+    {
+        "name": "Composite",
+        "vs": "Data/GrumpyEngine/Shaders/Composite.vs",
+        "fs": "Data/GrumpyEngine/Shaders/Composite.fs"
+    }
+]

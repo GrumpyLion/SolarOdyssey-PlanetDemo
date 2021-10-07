@@ -1,0 +1,30 @@
+[
+    {
+        "name": "Monitor",
+        "vs": "Data/GrumpyEngine/Shaders/Unlit.vs",
+        "fs": "Data/GrumpyEngine/Shaders/Unlit.fs",
+        "textures":
+        [{ "name": "uTexture", "location": "Data/SolarOdyssey/Textures/Monitor.png", "filter": "nearest", "wrap": "clamp" }]
+    },
+    {
+        "name": "Screen",
+        "vs": "Data/GrumpyEngine/Shaders/Unlit.vs",
+        "fs": "Data/GrumpyEngine/Shaders/Unlit.fs",
+        "textures":
+        [{ "name": "uTexture", "location": "Data/SolarOdyssey/Textures/Screen.png", "filter": "nearest", "wrap": "clamp" }]
+    },
+    {
+        "name": "Planet",
+        "vs": "Data/SolarOdyssey/Shaders/Planet.vs",
+        "fs": "Data/SolarOdyssey/Shaders/Planet.fs",
+        "textures":
+        [{ "name": "uTexture", "location": "Data/SolarOdyssey/Textures/Grass.png", "filter": "nearest", "wrap": "repeat" }]
+    },
+    {
+        "name": "DeadTree",
+        "vs": "Data/GrumpyEngine/Shaders/Default.vs",
+        "fs": "Data/GrumpyEngine/Shaders/Default.fs",
+        "textures":
+        [{ "name": "uTexture", "location": "Data/SolarOdyssey/Models/Nature/DeadTree_0.png", "filter": "nearest", "wrap": "repeat" }]
+    }
+]
