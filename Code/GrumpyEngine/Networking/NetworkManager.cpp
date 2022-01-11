@@ -1,5 +1,7 @@
 #include "pch.h"
 
+// TODO this is pretty outdated and needs a rewrite..
+//
 #if GE_ENABLE_NETWORKING
 #include "Types.h"
 

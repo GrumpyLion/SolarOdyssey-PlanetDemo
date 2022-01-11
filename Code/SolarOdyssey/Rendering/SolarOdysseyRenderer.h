@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Graphics/Renderer.h"
+#include "Foliage/FoliageManager.h"
 
 struct Framebuffer;
 struct UniformBuffer;
@@ -14,28 +15,29 @@ struct SolarOdysseyRenderer final : public CustomRenderer
     void Resize(int width, int height);
 
 #if !GE_FINAL
-    SPtr<Texture> GetFrameTexture();
     void RenderDebug() override;
 #endif
 
     void CalculateCoefficients();
    
+    FoliageManager myFoliageManager;
+
     struct AtmosphereBuffer
     {
         float myDensityFalloff = 2.6f;
         float myNumInScatterPoints = 10.0f;
         float myNumOpticalDepthPoints = 100.0f;
-        float myPlanetRadius = 200.0f;
+        float myPlanetRadius = 49.5f;
 
-        float myAtmosphereHeight = 40.0f;
+        float myAtmosphereHeight = 20.0f;
         float myAtmosphereRadius = myPlanetRadius + myAtmosphereHeight;
         Vec2 padding;
 
         Vec3 myPlanetCenter = Vec3(0.0f, 0.0f, 0.0f);
-        float myScatteringStrength = 1.0f;
+        float myScatteringStrength = 2.5f;
 
         Vec3 myScatterCoeffecients;
-        float myIntensity = 10.0f;
+        float myIntensity = 3.5f;
 
         float myDitherStrength = 1.0f;
         float myDitherScale = 1.5f;
@@ -63,15 +65,26 @@ struct SolarOdysseyRenderer final : public CustomRenderer
     SPtr<Framebuffer> myDepthFrame;
     SPtr<Framebuffer> myColorFrame;
     SPtr<Framebuffer> myCloudFrame;
+    SPtr<Framebuffer> myMotionVectorsFrame;
+    SPtr<Framebuffer> myMotionBlurFrame;
+    SPtr<Framebuffer> myAtmosphereFrame;
     SPtr<Framebuffer> myAtmosphereTexturePrecomputeFrame;
-#if !GE_FINAL
-    SPtr<Framebuffer> myFinalFrame;
-    SPtr<Texture> myFinalFrameTexture;
-#endif
 
-    SPtr<Mesh> mySunMesh;
+    SPtr<Mesh> mySkySphereMesh;
+    SPtr<Material> mySkySphereMaterial;
+
+    SPtr<Material> myGridMaterial;
+
     SPtr<Material> mySunMaterial;
     SPtr<Material> myAtmosphereTexturePrecomputeMaterial;
+    SPtr<Material> myAtmosphereMaterial;
+    SPtr<Material> myMotionBlurMaterial;
+    SPtr<Material> mySSAOMaterial;
     SPtr<Material> myFinalMaterial;
+
     bool myWireframeEnabled = false;
+    bool myShadowBlurEnabled = true;
+    bool myShadowsEnabled = true;
+    bool myMotionBlurEnabled = true;
+    bool myGridEnabled = true;
 };

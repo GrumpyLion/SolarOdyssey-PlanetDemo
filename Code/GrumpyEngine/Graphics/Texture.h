@@ -12,6 +12,7 @@ struct TextureDesc
     GLenum myClamp = GL_CLAMP_TO_EDGE;
     GLenum myAttachment{};
     GLenum myType{};
+    Vec4 myBorderColor = Vec4(0.0f);
     std::vector<uint8> myPixels;
 };
 
@@ -22,14 +23,15 @@ struct Texture
     static SPtr<Texture> Create(uint width, uint height, std::vector<uint8> data,
         GLenum format = GL_RGB, GLenum internalFormat = GL_RGB, GLenum filter = GL_NEAREST, GLenum clamp = GL_CLAMP_TO_EDGE, GLenum type = GL_UNSIGNED_INT, GLenum attachment = 0);
 
+    static void Track(SPtr<Texture> texture, const char* name);
+
     static std::map<std::string, SPtr<Texture>> ourTextures;
 
     Texture(const TextureDesc& desc);
     ~Texture();
 
     void Bind(int unit = -1) const;
-    void BindAsFramebufferTexture() const;
-    void Unbind() const;
+    void BindAsFramebufferTexture(GLuint framebuffer) const;
 
     int myWidth = 0;
     int myHeight = 0;

@@ -9,3 +9,4 @@
 #include "Maths.h"
 #include "Assert.h"
 #include "Clock.h"
+#include "RendererGlobals.h"

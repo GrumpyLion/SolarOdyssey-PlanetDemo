@@ -35,7 +35,8 @@ SPtr<Shader> Shader::Create(const std::string& vsLocation, const std::string& fs
     desc.myFSCode = std::string((std::istreambuf_iterator<char>(fsFile)),
                                  std::istreambuf_iterator<char>());
 
-    desc.myName = vsLocation;
+    desc.myVSLocation = vsLocation;
+    desc.myFSLocation = fsLocation;
 
     auto shader = MakeShared<Shader>();
     if (!shader->Compile(desc))
@@ -46,8 +47,8 @@ SPtr<Shader> Shader::Create(const std::string& vsLocation, const std::string& fs
 
 bool Shader::Compile(const ShaderDesc& desc)
 {
-    std::string vsCode = GetShaderCode(desc.myVSCode);
-    std::string fsCode = GetShaderCode(desc.myFSCode);
+    std::string vsCode = GetShaderCode(desc.myVSCode, desc.myVSLocation);
+    std::string fsCode = GetShaderCode(desc.myFSCode, desc.myFSLocation);
 
     uint vs = glCreateShader(GL_VERTEX_SHADER);
     uint fs = glCreateShader(GL_FRAGMENT_SHADER);
@@ -113,13 +114,13 @@ bool Shader::Compile(const ShaderDesc& desc)
     if (!status)
     {
         glGetShaderInfoLog(vs, 1024, NULL, log);
-        GE_PRINT("Vertex shader compilation error at: %s!\n%s", desc.myName.c_str(), std::string(log).c_str());
+        GE_PRINT("Vertex shader compilation error at: %s!\n%s", desc.myVSLocation.c_str(), std::string(log).c_str());
     }
     glGetShaderiv(fs, GL_COMPILE_STATUS, &status);
     if (!status)
     {
         glGetShaderInfoLog(fs, 1024, NULL, log);
-        GE_PRINT("Fragment shader compilation error at: %s!\n%s", desc.myName.c_str(), std::string(log).c_str());
+        GE_PRINT("Fragment shader compilation error at: %s!\n%s", desc.myFSLocation.c_str(), std::string(log).c_str());
     }
 
     glAttachShader(myProgram, vs);
@@ -131,6 +132,9 @@ bool Shader::Compile(const ShaderDesc& desc)
     {
         glGetProgramInfoLog(myProgram, 1024, NULL, log);
         GE_PRINT("Shader program linking error: %s", log);
+        GE_PRINT(vsCode.c_str());
+        GE_PRINT(fsCode.c_str());
+        GE_ASSERT(false);
     }
 
     glDeleteShader(vs);
@@ -217,9 +221,8 @@ void Shader::BindMatrix4x4(const char* location, Mat4 value) const
         glUniformMatrix4fv(loc, 1, GL_FALSE, (const GLfloat*)&value);
 }
 
-std::string Shader::GetShaderCode(std::string code) const
+std::string Shader::GetShaderCode(std::string code, const std::string& filename) const
 {
-    std::string returnCode = "#version 450 core\n";
     uint lastPos = 0;
     for (;;)
     {
@@ -228,28 +231,21 @@ std::string Shader::GetShaderCode(std::string code) const
         if (lastPos > code.size() || newPos > code.size())
             break;
 
-        if (line.find("#version") != -1)
-        {
-            code.erase(lastPos, newPos - lastPos);
-            continue;
-        }
-
         if (line.find("#include ") != -1)
         {
             std::string includeCode = GetIncludeCode(line);
             if (includeCode.empty())
                 continue;
 
-            returnCode.append(includeCode);
-            returnCode.append("\n");
+            includeCode.append("\n");
             code.erase(lastPos, newPos - lastPos);
+            code.insert(lastPos, includeCode);
             continue;
         }
         lastPos = newPos;
     }
 
-    returnCode.append(code);
-    return returnCode;
+    return code;
 }
 
 std::string Shader::GetIncludeCode(const std::string& line) const

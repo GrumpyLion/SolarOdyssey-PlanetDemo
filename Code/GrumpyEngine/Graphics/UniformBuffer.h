@@ -3,9 +3,8 @@
 struct UniformBuffer
 {
 public:
-    static SPtr<UniformBuffer> Create(uint bufferSize, uint index, void* data = nullptr, GLenum usage = GL_DYNAMIC_DRAW);
+    static SPtr<UniformBuffer> Create(uint bufferSize, uint index, const char* debugname = "UniformBuffer", void* data = nullptr, GLenum usage = GL_DYNAMIC_DRAW);
 
-    UniformBuffer(uint bufferSize, uint index, void* data = nullptr, GLenum usage = GL_DYNAMIC_DRAW);
     ~UniformBuffer();
 
     void Bind();

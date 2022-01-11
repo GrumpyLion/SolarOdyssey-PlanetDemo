@@ -5,15 +5,6 @@
 #include "Shader.h"
 #include "Texture.h"
 
-enum RenderPass
-{
-    Geometry = 0,
-    Depth,
-    Shadows,
-    MotionVectors,
-    Count
-};
-
 struct Material
 {
     struct Sampler

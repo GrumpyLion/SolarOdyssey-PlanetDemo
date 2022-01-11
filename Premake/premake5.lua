@@ -36,12 +36,9 @@ project "Solar Odyssey"
 	includedirs  
 	{		
 		"../Code/GrumpyEngine",
-		"../Code/GrumpyEngine/Audio",
 		"../Code/GrumpyEngine/Common",
 		"../Code/GrumpyEngine/Graphics",
-		"../Code/GrumpyEngine/Physics",
 		"../Code/GrumpyEngine/Input",
-		"../Code/GrumpyEngine/Networking",
 		"../Code/GrumpyEngine/Editor",
 
 		"../Code/SolarOdyssey",
@@ -99,7 +96,7 @@ project "Solar Odyssey"
     filter ""
 
 	pchheader "pch.h"
-	pchsource "../Code/Game/pch.cpp"
+	pchsource "../Code/SolarOdyssey/pch.cpp"
 
 group "Dependencies"
 include "../Code/Extern/GLFW"

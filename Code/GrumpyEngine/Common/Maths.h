@@ -7,6 +7,8 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+constexpr float MATH_PI = 3.1415926535897932384626433832795f;
+
 using Vec2i = glm::ivec2;
 using Vec3i = glm::ivec3;
 using Vec4i = glm::ivec4;
@@ -420,4 +422,29 @@ namespace Math
     {
         return glm::mat4_cast(quat);
     }
+
+    inline Mat4 GetRotationFromForward(const Vec3& forward, const Vec3& up)
+    {
+        Vec3 xAxis = Cross(up, forward);
+        xAxis = Normalize(xAxis);
+
+        Vec3 yAxis = Cross(forward, xAxis);
+        yAxis = Normalize(yAxis);
+
+        Mat4 result = Mat4(1.0f);
+        result[0][0] = xAxis.x;
+        result[0][1] = yAxis.x;
+        result[0][2] = forward.x;
+
+        result[1][0] = xAxis.y;
+        result[1][1] = yAxis.y;
+        result[1][2] = forward.y;
+
+        result[2][0] = xAxis.z;
+        result[2][1] = yAxis.z;
+        result[2][2] = forward.z;
+
+        return Inverse(result);
+    }
+
 }

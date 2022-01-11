@@ -20,7 +20,7 @@ Player::Player()
     PxCapsuleControllerDesc description;
     description.height = 1.0;
     description.radius = 0.25;
-    description.position = PxExtendedVec3(10, 210, 0);
+    description.position = PxExtendedVec3(10, 60, 0);
 
     myController = MakeUnique<CharacterController>(description);
     myCameraData.myNear = 0.25f;
@@ -157,7 +157,6 @@ void Player::CalculateSphericalMovement(float delta)
     CameraMan::SetCameraData(0, myCameraData);
 }
 
-
 void Player::CalculateGravity(float delta)
 {
     const Vec3 planetPos = Vec3(0.0f);
@@ -192,15 +191,6 @@ void Player::ProcessInput(float delta)
         myRotation += -Vec3(rightAxisVertical * myMouseSpeed * delta, -rightAxisHorizontal * myMouseSpeed * delta, 0);
         myHeadBob.x += leftAxisVertical * myHeadBobStrenght * delta;
         myHeadBob.z -= leftAxisHorizontal * myHeadBobStrenght * delta;
-    }
-
-    float velocity = Math::Length(myVelocity * 0.75f) * 10.f;
-    if (Math::Length(myVelocity) > 0.001f && Clock::GetCurrentTimeInSec() > myLastTimeStepSoundPlayed + (0.75f - velocity))
-    {
-        AudioManager::Play(myStepSound);
-        AudioManager::SetVolume(myStepSound, 0.5f);
-        AudioManager::SetPitch(myStepSound, 1.0f + Math::RandomFloat(-0.25f, 0.25f));
-        myLastTimeStepSoundPlayed = Clock::GetCurrentTimeInSec();
     }
 
     if (myRotation.x > 90)

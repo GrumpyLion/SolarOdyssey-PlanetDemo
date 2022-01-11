@@ -1,6 +1,7 @@
 #pragma once
 
-// TODO needs rework
+// TODO this is pretty outdated and needs a rewrite..
+//
 #if GE_ENABLE_NETWORKING
 #include <enet/enet.h>
 

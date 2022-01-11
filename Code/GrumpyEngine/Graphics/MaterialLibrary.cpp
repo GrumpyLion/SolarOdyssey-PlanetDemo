@@ -34,8 +34,33 @@ bool MaterialLibrary::LoadFromJSON(const char* location)
 
         material = Material::Create(name.c_str(), vsLocation.c_str(), fsLocation.c_str());
 
+        if (!materialNode["shaders"].is_null())
+        {
+            for (auto shaderNode : materialNode["shaders"])
+            {
+                std::string type = shaderNode["type"].get<std::string>();
+
+                if (!shaderNode["vs"].is_null())
+                    vsLocation = shaderNode["vs"].get<std::string>();
+
+                if (!shaderNode["fs"].is_null())
+                    fsLocation = shaderNode["fs"].get<std::string>();
+
+                RenderPass pass = RenderPass::Geometry;
+                if (type.compare("depth") == 0)
+                    pass = RenderPass::Depth;
+                else if (type.compare("motion") == 0)
+                    pass = RenderPass::MotionVectors;
+                else if (type.compare("shadows") == 0)
+                    pass = RenderPass::Shadows;
+
+                material->AddShaderPass(vsLocation.c_str(), fsLocation.c_str(), pass);
+            }
+        }
+
         if (!materialNode["textures"].is_null())
         {
+            int index = 0;
             for (auto textureNode : materialNode["textures"])
             {
                 std::string name = textureNode["name"].get<std::string>();
@@ -63,7 +88,7 @@ bool MaterialLibrary::LoadFromJSON(const char* location)
                 if (!wrap.empty() && wrap.compare("mirror") == 0)
                     wrapVal = GL_MIRRORED_REPEAT;
 
-                material->AddTexture(name.c_str(), Texture::Create(location, filterVal, wrapVal));
+                material->AddTexture(name.c_str(), Texture::Create(location, filterVal, wrapVal), index++);
             }
         }
     }

@@ -59,7 +59,7 @@ UPtr<T> MakeUnique(Args... args)
 
 #if !GE_FINAL && GE_PLATFORM_PC
 #include <windows.h>
-#define GE_PRINT(...) { char cad[512]; sprintf(cad, __VA_ARGS__); OutputDebugStringA(cad); OutputDebugStringA("\n"); }
+#define GE_PRINT(...) { char cad[2048]; sprintf(cad, __VA_ARGS__); OutputDebugStringA(cad); OutputDebugStringA("\n"); }
 #else
 #define GE_PRINT(...)
 #endif
@@ -165,7 +165,7 @@ public:
     }
 
     const uint myMaxCount = Size;
-    uint myCurrentCount;
+    uint myCurrentCount = 0;
 
 private:
     T myArray[Size];

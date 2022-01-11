@@ -34,30 +34,33 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 //
-//struct DirectionalLight : public RefCounted
-//{
-//    static Ref<DirectionalLight> Create(int width, int height);
-//
-//    DirectionalLight(int width, int height);
-//    void RenderDepth();
-//
-//    struct Buffer
-//    {
-//        Mat4 myProjectionMatrix;
-//        Mat4 myViewMatrix;
-//    };
-//    Ref<UniformBuffer> myBuffer{};
-//    Ref<Framebuffer> myFramebuffer{};
-//    Ref<Texture> myDepthTexture{};
-//    Ref<Material> myDepthMaterial{};
-//
-//    Vec3 myRotation{};
-//    Vec3 myPosition{};
-//    float myArea = 100.0f;
-//    float myFar = 100.0f;
-//    int myWidth = 256;
-//    int myHeight = 256;
-//};
+struct DirectionalLight
+{
+    static SPtr<DirectionalLight> Create(int width, int height);
+
+    DirectionalLight(int width, int height);
+    void Bind();
+    void Unbind();
+    void Blur();
+    void Clear();
+
+    struct Buffer
+    {
+        Mat4 myProjectionMatrix;
+        Mat4 myViewMatrix;
+    };
+    SPtr<UniformBuffer> myBuffer{};
+    SPtr<Framebuffer> myDepthFrame{};
+    SPtr<Framebuffer> myBlurFrame{};
+    SPtr<Material> myBlurMaterial{};
+
+    Vec3 myRotation{};
+    Vec3 myPosition{};
+    float myArea = 100.0f;
+    float myFar = 100.0f;
+    int myWidth = 256;
+    int myHeight = 256;
+};
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -99,7 +102,7 @@ namespace Lighting
     };
 
     //extern Ref<SpotLight> ourSpotLight;
-    //extern Ref<DirectionalLight> ourDirectionalLight;
+    extern SPtr<DirectionalLight> ourDirectionalLight;
 
     extern LightBuffer ourLightBuffer;
     extern SPtr<UniformBuffer> ourLightUniformBuffer;

@@ -11,7 +11,6 @@ struct CustomRenderer
     virtual void Resize(int width, int height) {};
 
 #if !GE_FINAL
-    virtual SPtr<Texture> GetFrameTexture() { return nullptr; }
     virtual void RenderDebug() {}
 #endif
 };

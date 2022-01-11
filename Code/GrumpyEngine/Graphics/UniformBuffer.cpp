@@ -1,22 +1,23 @@
 #include "pch.h"
 #include "UniformBuffer.h"
 
-SPtr<UniformBuffer> UniformBuffer::Create(uint bufferSize, uint index, void* data /*= nullptr*/, GLenum usage /*= GL_DYNAMIC_DRAW*/)
+SPtr<UniformBuffer> UniformBuffer::Create(uint bufferSize, uint index, const char* debugname /*= "UniformBuffer"*/, void* data /*= nullptr*/, GLenum usage /*= GL_DYNAMIC_DRAW*/)
 {
-    return MakeShared<UniformBuffer>(bufferSize, index, data, usage);
-}
+    SPtr<UniformBuffer> buffer = MakeShared<UniformBuffer>();
 
-UniformBuffer::UniformBuffer(uint bufferSize, uint index, void* data /*= nullptr*/, GLenum usage /*= GL_DYNAMIC_DRAW*/)
-{
-    mySize = bufferSize;
-    myIndex = index;
+    buffer->mySize = bufferSize;
+    buffer->myIndex = index;
 
-    glGenBuffers(1, &myUBO);
-    glBindBuffer(GL_UNIFORM_BUFFER, myUBO);
+    glGenBuffers(1, &buffer->myUBO);
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer->myUBO);
     glBufferData(GL_UNIFORM_BUFFER, bufferSize, data, usage);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, index, myUBO);
+    glObjectLabel(GL_BUFFER, buffer->myUBO, strlen(debugname), debugname);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, index, buffer->myUBO);
+
+    return buffer;
 }
 
 UniformBuffer::~UniformBuffer()

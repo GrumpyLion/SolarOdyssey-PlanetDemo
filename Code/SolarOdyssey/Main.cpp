@@ -14,7 +14,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 #endif
 
     {
-        SolarOdyssey solarOdyssey{};
+        SolarOdyssey::Initialize();
+        SolarOdyssey::Shutdown();
     }
 
     return 0;

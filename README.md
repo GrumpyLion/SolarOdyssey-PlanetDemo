@@ -1,0 +1,2 @@
+Run generate script in Premake folder to get visual studio solution and then just build and run.
+This is only part of my work on Solar Odyssey and is not the final version. WASD and mouse controls are used for editor and FPS sample. Use Q and E for flying up and down in editor mode. Use Game/Switch Active Camera to switch between modes.

@@ -25,6 +25,7 @@ struct Mesh
     void Render() const;
 
     Mat4 myLocalMatrix = Mat4(1.0);
+    Mat4 myPrevMatrix = Mat4(1.0);
     GLuint myVAO = 0;
     GLuint myBuffers[4];
     int myComponentType = 0;

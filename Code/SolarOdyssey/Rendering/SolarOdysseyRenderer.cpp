@@ -8,6 +8,10 @@
 #include "Graphics/Renderer.h"
 #include "Graphics/CameraMan.h"
 #include "Graphics/Lighting.h"
+
+#include "SolarOdyssey.h"
+#include "SolarSystem/Planet.h"
+
 #include "SolarOdysseyRenderer.h"
 
 #if !GE_FINAL
@@ -17,9 +21,15 @@
 
 SolarOdysseyRenderer::SolarOdysseyRenderer()
 {
+    mySkySphereMesh = Mesh::Create("Data/SolarOdyssey/Models/Sun.glb");
+    mySkySphereMaterial = Material::Create("Data/GrumpyEngine/Shaders/MotionVectorsBoundary.vs", "Data/GrumpyEngine/Shaders/MotionVectors.fs");
+    mySkySphereMaterial->AddShaderPass("Data/GrumpyEngine/Shaders/Centered.vs", "Data/GrumpyEngine/Shaders/Depth.fs", RenderPass::Depth);
+
+    myGridMaterial = Material::Create("Data/GrumpyEngine/Shaders/Grid.vs", "Data/GrumpyEngine/Shaders/Grid.fs");
+
     CalculateCoefficients();
-    myAtmosphereUniformBuffer = UniformBuffer::Create(sizeof(AtmosphereBuffer), (uint)UniformBufferIndexes::AtmosphereBuffer, &myAtmosphereBuffer, GL_STATIC_DRAW);
-    myWaterUniformBuffer = UniformBuffer::Create(sizeof(WaterBuffer), (uint)UniformBufferIndexes::WaterBuffer, &myWaterBuffer, GL_STATIC_DRAW);
+    myAtmosphereUniformBuffer = UniformBuffer::Create(sizeof(AtmosphereBuffer), (uint)UniformBufferIndexes::AtmosphereBuffer, "Atmosphere Buffer", &myAtmosphereBuffer, GL_STATIC_DRAW);
+    myWaterUniformBuffer = UniformBuffer::Create(sizeof(WaterBuffer), (uint)UniformBufferIndexes::WaterBuffer, "Water Buffer", &myWaterBuffer, GL_STATIC_DRAW);
 
     //////////////////////////////////////////////////////////////////////////
     // precompute optical depth for atmosphere
@@ -32,10 +42,13 @@ SolarOdysseyRenderer::SolarOdysseyRenderer()
     precomputeDesc.myFormat = GL_RGB;
     precomputeDesc.myType = GL_UNSIGNED_BYTE;
     precomputeDesc.myClamp = GL_CLAMP_TO_BORDER;
+
     myAtmosphereTexturePrecomputeFrame = Framebuffer::Create(precomputeDesc.myWidth, precomputeDesc.myHeight);
     myAtmosphereTexturePrecomputeFrame->AddAttachment("Color", Texture::Create(precomputeDesc));
+    Texture::Track(myAtmosphereTexturePrecomputeFrame->myTextures["Color"], "Atmosphere Precompute");
+    myAtmosphereTexturePrecomputeFrame->Finalize();
 
-    myAtmosphereTexturePrecomputeMaterial = Material::Create("Data/SolarOdyssey/Shaders/Final.vs", "Data/SolarOdyssey/Shaders/AtmosphereTexture.fs");
+    myAtmosphereTexturePrecomputeMaterial = Material::Create("Data/GrumpyEngine/Shaders/Composite.vs", "Data/SolarOdyssey/Shaders/AtmosphereTexture.fs");
     myAtmosphereTexturePrecomputeFrame->Bind();
     glClear(GL_COLOR_BUFFER_BIT);
     myAtmosphereTexturePrecomputeMaterial->Bind();
@@ -46,45 +59,19 @@ SolarOdysseyRenderer::SolarOdysseyRenderer()
 
 SolarOdysseyRenderer::~SolarOdysseyRenderer()
 {
-
+    
 }
 
 void SolarOdysseyRenderer::Render(float delta)
 {
-#if !GE_FINAL
-    //static ULONGLONG lastLoadTime = GetTickCount64(); // move this
-    //if (GetAsyncKeyState(VK_CONTROL) && GetAsyncKeyState('S'))
-    //{
-    //    const ULONGLONG tickCount = GetTickCount64();
-    //    if (tickCount - lastLoadTime > 200)
-    //    {
-    //        Sleep(100); // Wait for a while to let the file system finish the file write.
-
-    //        myAtmosphereTexturePrecomputeMaterial = Material::Create("Data/SolarOdyssey/Shaders/Final.vs", "Data/SolarOdyssey/Shaders/AtmosphereTexture.fs");
-
-    //        myFinalMaterial = Material::Create("Data/SolarOdyssey/Shaders/Final.vs", "Data/SolarOdyssey/Shaders/Final.fs");
-    //        myFinalMaterial->AddTexture("uColor", myColorFrame->myTextures["Color"]);
-    //        myFinalMaterial->AddTexture("uDepth", myDepthFrame->myTextures["Depth"], 1);
-    //        myFinalMaterial->AddTexture("uBlueNoise", Texture::Create("Data/GrumpyEngine/Textures/BlueNoise.png", GL_LINEAR, GL_REPEAT), 2);
-    //        myFinalMaterial->AddTexture("uAtmospherePrecompute", myAtmosphereTexturePrecomputeFrame->myTextures["Color"], 3);
-    //        myFinalMaterial->AddTexture("uWaveNormalsA", Texture::Create("Data/SolarOdyssey/Textures/WaveA.png", GL_NEAREST, GL_REPEAT), 4);
-    //        myFinalMaterial->AddTexture("uWaveNormalsB", Texture::Create("Data/SolarOdyssey/Textures/WaveB.png", GL_NEAREST, GL_REPEAT), 5);
-    //    }
-    //    lastLoadTime = tickCount;
-    //}
-
-    //myAtmosphereTexturePrecomputeFrame->Bind();
-    //glClear(GL_COLOR_BUFFER_BIT);
-    //myAtmosphereTexturePrecomputeMaterial->Bind();
-    //Primitives::DrawFullscreenQuad();
-#endif
-
-    //Lighting::ourLightBuffer.myDirectionalLight.myDirection = Math::GetForwardVector(Vec3(0.0f, Clock::GetCurrentTimeInSec(), 0.0f));
-
     RendererAPI::SetWireframeMode(myWireframeEnabled);
+
     //////////////////////////////////////////////////////////////////////////
     // Depth
+
     myDepthFrame->Bind();
+
+    glCullFace(GL_BACK);
     glDepthMask(true);
     glDepthFunc(GL_LESS);
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -100,14 +87,65 @@ void SolarOdysseyRenderer::Render(float delta)
         mesh->Render();
     }
 
+    myFoliageManager.Render(delta, RenderPass::Depth);
+
     glDepthFunc(GL_EQUAL);
     glDepthMask(false);
     myDepthFrame->Unbind();
+
+    //
+    //////////////////////////////////////////////////////////////////////////
+    // Shadows
+
+    if (myShadowsEnabled)
+    {
+        Lighting::ourDirectionalLight->Bind();
+
+        for (FrameData::Instance instance : Renderer::ourFrameData.myInstances)
+        {
+            const Mesh* mesh = instance.myMesh.get();
+            const Material* material = instance.myMaterial.get();
+            const Mat4& transform = instance.myMatrix;
+
+            material->Bind(RenderPass::Shadows);
+            material->myShaders[RenderPass::Shadows]->BindMatrix4x4("uModelMatrix", transform);
+            mesh->Render();
+        }
+
+        myFoliageManager.Render(delta, RenderPass::Shadows);
+
+        Lighting::ourDirectionalLight->Unbind();
+
+        if (myShadowBlurEnabled)
+            Lighting::ourDirectionalLight->Blur();
+    }
+    else
+        Lighting::ourDirectionalLight->Clear();
+
     //
     //////////////////////////////////////////////////////////////////////////
     // Color
+
     myColorFrame->Bind();
+    unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+    glDrawBuffers(3, attachments);
     glClear(GL_COLOR_BUFFER_BIT); 
+
+
+#if !GE_FINAL
+    if (myGridEnabled)
+    {
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+        myGridMaterial->Bind();
+		static GLuint vao = 0;
+		glCreateVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+        glDrawArraysInstancedBaseInstance(GL_TRIANGLES, 0, 6, 1, 0);
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
+    }
+#endif
 
     for (FrameData::Instance instance : Renderer::ourFrameData.myInstances)
     {
@@ -120,11 +158,69 @@ void SolarOdysseyRenderer::Render(float delta)
         mesh->Render();
     }
 
+    myFoliageManager.Render(delta, RenderPass::Geometry);
+
     myColorFrame->Unbind();
     RendererAPI::SetWireframeMode(false);
+
+    //
+    //////////////////////////////////////////////////////////////////////////
+    // Motion Vectors
+
+    myMotionVectorsFrame->Bind();
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    for (FrameData::Instance instance : Renderer::ourFrameData.myInstances)
+    {
+        Mesh* mesh = instance.myMesh.get();
+        const SPtr<Material> material = instance.myMaterial;
+        const Mat4& transform = instance.myMatrix;
+
+        material->Bind(RenderPass::MotionVectors);
+        material->myShaders[RenderPass::MotionVectors]->BindMatrix4x4("uModelMatrix", transform);
+        material->myShaders[RenderPass::MotionVectors]->BindMatrix4x4("uPrevModelMatrix", mesh->myPrevMatrix);
+        mesh->Render();
+
+        mesh->myPrevMatrix = transform;
+    }
+
+    myFoliageManager.Render(delta, RenderPass::MotionVectors);
+
+    myMotionVectorsFrame->Unbind();
+
+    //
+    //////////////////////////////////////////////////////////////////////////
+    // Atmosphere
+
+    myAtmosphereFrame->Bind();
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    myAtmosphereMaterial->Bind();
+
+    Primitives::DrawFullscreenQuad();
+
+    myAtmosphereFrame->Unbind();
+
+    //
+    //////////////////////////////////////////////////////////////////////////
+    // Motion Blur
+
+    if (myMotionBlurEnabled)
+    {
+        myMotionBlurFrame->Bind();
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        myMotionBlurMaterial->Bind();
+
+        Primitives::DrawFullscreenQuad();
+
+        myMotionBlurFrame->Unbind();
+    }
+
     //
     //////////////////////////////////////////////////////////////////////////
     // Final
+
     glViewport(0, 0, (int)Renderer::ourRenderTargetDimensions.x, (int)Renderer::ourRenderTargetDimensions.y);
     glDepthFunc(GL_LESS);
     glDepthMask(true);
@@ -132,10 +228,6 @@ void SolarOdysseyRenderer::Render(float delta)
 
     myFinalMaterial->Bind();
     Primitives::DrawFullscreenQuad();
-
-#if !GE_FINAL
-    myFinalFrame->Unbind();
-#endif
 }
 
 void SolarOdysseyRenderer::Resize(int width, int height)
@@ -146,37 +238,72 @@ void SolarOdysseyRenderer::Resize(int width, int height)
     desc.myFilter = GL_LINEAR;
 
     myColorFrame = Framebuffer::Create(width, height);
+    myMotionVectorsFrame = Framebuffer::Create(width, height);
+    myMotionBlurFrame = Framebuffer::Create(width, height);
+    myAtmosphereFrame = Framebuffer::Create(width, height);
+    myDepthFrame = Framebuffer::Create(width, height);
+
     desc.myAttachment = GL_COLOR_ATTACHMENT0;
-    desc.myInternalFormat = GL_RGBA;
-    desc.myFormat = GL_RGBA;
+    desc.myInternalFormat = GL_RGBA8;
     desc.myType = GL_UNSIGNED_BYTE;
     desc.myClamp = GL_MIRRORED_REPEAT;
+    
     myColorFrame->AddAttachment("Color", Texture::Create(desc));
-    desc.myClamp = GL_CLAMP_TO_BORDER;
+    Texture::Track(myColorFrame->myTextures["Color"], "Color");
 
-#if !GE_FINAL
-    myFinalFrame = Framebuffer::Create(width, height);
-    myFinalFrameTexture = Texture::Create(desc);
-    myFinalFrame->AddAttachment("Color", myFinalFrameTexture);
-#endif
+    myMotionBlurFrame->AddAttachment("Color", Texture::Create(desc));
+    Texture::Track(myMotionBlurFrame->myTextures["Color"], "Motion Blur");
+
+    myAtmosphereFrame->AddAttachment("Color", Texture::Create(desc));
+    Texture::Track(myAtmosphereFrame->myTextures["Color"], "Atmosphere Step");
+
+    desc.myClamp = GL_CLAMP_TO_BORDER;
+    desc.myInternalFormat = GL_RGB16F;
+    myMotionVectorsFrame->AddAttachment("Color", Texture::Create(desc));
+    Texture::Track(myMotionVectorsFrame->myTextures["Color"], "MotionVectors");
+
+    desc.myAttachment = GL_COLOR_ATTACHMENT1;
+    myColorFrame->AddAttachment("Normals", Texture::Create(desc));
+    Texture::Track(myColorFrame->myTextures["Normals"], "Normals");
+
+    desc.myAttachment = GL_COLOR_ATTACHMENT2;
+    myColorFrame->AddAttachment("FragPos", Texture::Create(desc));
+    Texture::Track(myColorFrame->myTextures["FragPos"], "FragPos");
 
     //////////////////////////////////////////////////////////////////////////
 
-    myDepthFrame = Framebuffer::Create(width, height);
     desc.myAttachment = GL_DEPTH_ATTACHMENT;
     desc.myInternalFormat = GL_DEPTH24_STENCIL8;
-    desc.myFormat = GL_DEPTH_STENCIL;
     desc.myType = GL_UNSIGNED_INT_24_8;
+    
     myDepthFrame->AddAttachment("Depth", Texture::Create(desc));
-    myColorFrame->AddAttachment("Depth", myDepthFrame->myTextures["Depth"]);
+    Texture::Track(myDepthFrame->myTextures["Depth"], "Depth");
 
-    myFinalMaterial = Material::Create("Data/SolarOdyssey/Shaders/Final.vs", "Data/SolarOdyssey/Shaders/Final.fs");
-    myFinalMaterial->AddTexture("uColor", myColorFrame->myTextures["Color"]);
-    myFinalMaterial->AddTexture("uDepth", myDepthFrame->myTextures["Depth"], 1);
-    myFinalMaterial->AddTexture("uBlueNoise", Texture::Create("Data/GrumpyEngine/Textures/BlueNoise.png", GL_LINEAR, GL_REPEAT), 2);
-    myFinalMaterial->AddTexture("uAtmospherePrecompute", myAtmosphereTexturePrecomputeFrame->myTextures["Color"], 3);
-    myFinalMaterial->AddTexture("uWaveNormalsA", Texture::Create("Data/SolarOdyssey/Textures/WaveA.png", GL_NEAREST, GL_REPEAT), 4);
-    myFinalMaterial->AddTexture("uWaveNormalsB", Texture::Create("Data/SolarOdyssey/Textures/WaveB.png", GL_NEAREST, GL_REPEAT), 5);
+    myColorFrame->AddAttachment("Depth", myDepthFrame->myTextures["Depth"]);
+    myMotionVectorsFrame->AddAttachment("Depth", myDepthFrame->myTextures["Depth"]);
+    
+    myDepthFrame->Finalize();
+    myMotionVectorsFrame->Finalize();
+    myColorFrame->Finalize();
+    myAtmosphereFrame->Finalize();
+    myMotionBlurFrame->Finalize();
+
+    //////////////////////////////////////////////////////////////////////////
+
+    myAtmosphereMaterial = Material::Create("Data/SolarOdyssey/Shaders/Atmosphere.vs", "Data/SolarOdyssey/Shaders/Atmosphere.fs");
+    myAtmosphereMaterial->AddTexture("uColor", myColorFrame->myTextures["Color"]);
+    myAtmosphereMaterial->AddTexture("uDepth", myDepthFrame->myTextures["Depth"], 1);
+    myAtmosphereMaterial->AddTexture("uBlueNoise", Texture::Create("Data/GrumpyEngine/Textures/BlueNoise.png", GL_LINEAR, GL_REPEAT), 2);
+    myAtmosphereMaterial->AddTexture("uAtmospherePrecompute", myAtmosphereTexturePrecomputeFrame->myTextures["Color"], 3);
+    myAtmosphereMaterial->AddTexture("uWaveNormalsA", Texture::Create("Data/SolarOdyssey/Textures/WaveA.png", GL_NEAREST, GL_REPEAT), 4);
+    myAtmosphereMaterial->AddTexture("uWaveNormalsB", Texture::Create("Data/SolarOdyssey/Textures/WaveB.png", GL_NEAREST, GL_REPEAT), 5);
+
+    myMotionBlurMaterial = Material::Create("Data/GrumpyEngine/Shaders/MotionBlur.vs", "Data/GrumpyEngine/Shaders/MotionBlur.fs");
+    myMotionBlurMaterial->AddTexture("uColor", myAtmosphereFrame->myTextures["Color"]);
+    myMotionBlurMaterial->AddTexture("uMotionVectors", myMotionVectorsFrame->myTextures["Color"], 1);
+
+    myFinalMaterial = Material::Create("Data/GrumpyEngine/Shaders/Composite.vs", "Data/GrumpyEngine/Shaders/Composite.fs");
+    myFinalMaterial->AddTexture("uColor", myMotionBlurFrame->myTextures["Color"]);
 }
 
 #if !GE_FINAL
@@ -221,6 +348,17 @@ void SolarOdysseyRenderer::RenderDebug()
 
     ImGui::Text("Misc");
     ImGui::Checkbox("Wireframe", &myWireframeEnabled);
+    ImGui::Checkbox("Grid", &myGridEnabled);
+    ImGui::Checkbox("Shadows", &myShadowsEnabled);
+    ImGui::Checkbox("Shadows Blur", &myShadowBlurEnabled);
+
+    if (ImGui::Checkbox("Motion Blur", &myMotionBlurEnabled))
+    {
+        if (myMotionBlurEnabled)
+            myFinalMaterial->AddTexture("uColor", myMotionBlurFrame->myTextures["Color"]);
+        else
+            myFinalMaterial->AddTexture("uColor", myAtmosphereFrame->myTextures["Color"]);
+    }
 
     CalculateCoefficients();
     myAtmosphereUniformBuffer->SetData(&myAtmosphereBuffer);
@@ -237,10 +375,3 @@ void SolarOdysseyRenderer::CalculateCoefficients()
     float scatterB = pow(400.0f / myWaveLengths.z, 4.0f) * myAtmosphereBuffer.myScatteringStrength;
     myAtmosphereBuffer.myScatterCoeffecients = Vec3(scatterR, scatterG, scatterB);
 }
-
-#if !GE_FINAL
-SPtr<Texture> SolarOdysseyRenderer::GetFrameTexture()
-{
-    return myFinalFrameTexture;
-}
-#endif

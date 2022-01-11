@@ -9,7 +9,7 @@ struct FrameData
     {
         SPtr<Mesh> myMesh;
         SPtr<Material> myMaterial;
-        Mat4 myMatrix;
+        Mat4 myMatrix = Mat4(1.0f);
     };
 
     FrameData();

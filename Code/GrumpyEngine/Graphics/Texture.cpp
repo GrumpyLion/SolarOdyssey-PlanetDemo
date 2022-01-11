@@ -62,6 +62,11 @@ SPtr<Texture> Texture::Create(uint width, uint height, std::vector<uint8> data, 
     return MakeShared<Texture>(desc);
 }
 
+void Texture::Track(SPtr<Texture> texture, const char* name)
+{
+    ourTextures[name] = texture;
+}
+
 //
 //////////////////////////////////////////////////////////////////////////
 //
@@ -71,21 +76,28 @@ Texture::Texture(const TextureDesc& desc)
     , myHeight(desc.myHeight)
     , myAttachment(desc.myAttachment)
 {
-    glGenTextures(1, &myTextureID);
-    Bind();
+    glCreateTextures(GL_TEXTURE_2D, 1, &myTextureID);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, desc.myFilter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, desc.myFilter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, desc.myClamp);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, desc.myClamp);
-    glTexImage2D(GL_TEXTURE_2D, 0, desc.myInternalFormat, myWidth, myHeight, 0, desc.myFormat, desc.myType, desc.myPixels.data());
+    glTextureParameteri(myTextureID, GL_TEXTURE_MIN_FILTER, desc.myFilter);
+    glTextureParameteri(myTextureID, GL_TEXTURE_MAG_FILTER, desc.myFilter);
+    glTextureParameteri(myTextureID, GL_TEXTURE_WRAP_S, desc.myClamp);
+    glTextureParameteri(myTextureID, GL_TEXTURE_WRAP_T, desc.myClamp);
 
+    glTextureParameterfv(myTextureID, GL_TEXTURE_BORDER_COLOR, (float*)&desc.myBorderColor);
+
+
+    int width = desc.myWidth;
+    int height = desc.myHeight;
+
+    glTextureStorage2D(myTextureID, 1, desc.myInternalFormat, width, height);
+    
+    if (desc.myPixels.size() > 0)
+        glTextureSubImage2D(myTextureID, 0, 0, 0, width, height, desc.myFormat, desc.myType, desc.myPixels.data());
+    
     if (desc.myAttachment != 0)
-        glFramebufferTexture2D(GL_FRAMEBUFFER, desc.myAttachment, GL_TEXTURE_2D, myTextureID, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, desc.myAttachment, myTextureID, 0);
     else
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-    Unbind();
+        glGenerateTextureMipmap(myTextureID);
 }
 
 Texture::~Texture()
@@ -95,18 +107,10 @@ Texture::~Texture()
 
 void Texture::Bind(int unit /*= -1*/) const
 {
-    if (unit >= 0)
-        glActiveTexture(GL_TEXTURE0 + unit);
-
-    glBindTexture(GL_TEXTURE_2D, myTextureID);
+    glBindTextureUnit(unit, myTextureID);
 }
 
-void Texture::BindAsFramebufferTexture() const
+void Texture::BindAsFramebufferTexture(GLuint framebuffer) const
 {
-    glFramebufferTexture(GL_FRAMEBUFFER, myAttachment, myTextureID, 0);
-}
-
-void Texture::Unbind() const
-{
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glNamedFramebufferTexture(framebuffer, myAttachment, myTextureID, 0);
 }

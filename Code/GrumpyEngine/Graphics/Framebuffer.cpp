@@ -23,12 +23,16 @@ Framebuffer::Framebuffer(const FramebufferDesc& desc)
     myHeight = desc.myHeight;
 
     glCreateFramebuffers(1, &myFBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, myFBO);
 }
 
 Framebuffer::~Framebuffer()
 {
     glDeleteFramebuffers(1, &myFBO);
+}
+
+void Framebuffer::Finalize()
+{
+    GE_ASSERT(glCheckNamedFramebufferStatus(myFBO, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 }
 
 void Framebuffer::Bind()
@@ -45,7 +49,5 @@ void Framebuffer::Unbind()
 void Framebuffer::AddAttachment(const char* name, SPtr<Texture> texture)
 {
     myTextures[name] = texture;
-    Bind();
-    texture->BindAsFramebufferTexture();
-    Unbind();
+    texture->BindAsFramebufferTexture(myFBO);
 }

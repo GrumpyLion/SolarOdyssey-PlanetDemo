@@ -26,5 +26,22 @@
         "fs": "Data/GrumpyEngine/Shaders/Default.fs",
         "textures":
         [{ "name": "uTexture", "location": "Data/SolarOdyssey/Models/Nature/DeadTree_0.png", "filter": "nearest", "wrap": "repeat" }]
+    },
+    {
+        "name": "Tree",
+        "shaders":
+        [{"type":"geometry", "vs": "Data/SolarOdyssey/Shaders/Tree.vs", "fs": "Data/SolarOdyssey/Shaders/Flat.fs"},
+         {"type":"depth", "vs": "Data/SolarOdyssey/Shaders/Tree.vs", "fs": "Data/GrumpyEngine/Shaders/Depth.fs"},
+         {"type":"shadows", "vs": "Data/SolarOdyssey/Shaders/TreeShadows.vs", "fs": "Data/GrumpyEngine/Shaders/DirectionalLight.fs"}],
+        "textures":
+        [{ "name": "uTexture", "location": "Data/SolarOdyssey/Models/Nature/Diffuse.png", "filter": "nearest", "wrap": "repeat" },
+         { "name": "uNoise", "location": "Data/SolarOdyssey/Textures/Noise.png", "filter": "linear", "wrap": "mirror" }]
+    },
+    {
+        "name": "Boat",
+        "vs": "Data/SolarOdyssey/Shaders/Flat.vs",
+        "fs": "Data/SolarOdyssey/Shaders/Flat.fs",
+        "textures":
+        [{ "name": "uTexture", "location": "Data/SolarOdyssey/Models/Nature/Diffuse.png", "filter": "nearest", "wrap": "repeat" }]
     }
 ]

@@ -34,7 +34,7 @@ void Window::Initialize()
         glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
     }
 
-#if GE_DEBUG
+#if !GE_FINAL
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
 

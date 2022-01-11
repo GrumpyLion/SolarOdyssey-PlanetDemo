@@ -13,6 +13,7 @@ SPtr<Material> Material::Create(const char* name, const char* vsLocation, const 
 
     mat->AddShaderPass("Data/GrumpyEngine/Shaders/Depth.vs", "Data/GrumpyEngine/Shaders/Depth.fs", RenderPass::Depth); // TODO this needs to be defined in the json instead of here
     mat->AddShaderPass("Data/GrumpyEngine/Shaders/MotionVectors.vs", "Data/GrumpyEngine/Shaders/MotionVectors.fs", RenderPass::MotionVectors);
+    mat->AddShaderPass("Data/GrumpyEngine/Shaders/DirectionalLight.vs", "Data/GrumpyEngine/Shaders/DirectionalLight.fs", RenderPass::Shadows);
 
     ourMaterials[name] = mat;
     return mat;
@@ -26,6 +27,8 @@ SPtr<Material> Material::Create(const char* vsLocation, const char* fsLocation)
 
     mat->AddShaderPass("Data/GrumpyEngine/Shaders/Depth.vs", "Data/GrumpyEngine/Shaders/Depth.fs", RenderPass::Depth); // TODO this needs to be defined in the json instead of here
     mat->AddShaderPass("Data/GrumpyEngine/Shaders/MotionVectors.vs", "Data/GrumpyEngine/Shaders/MotionVectors.fs", RenderPass::MotionVectors);
+    mat->AddShaderPass("Data/GrumpyEngine/Shaders/DirectionalLight.vs", "Data/GrumpyEngine/Shaders/DirectionalLight.fs", RenderPass::Shadows);
+
     return mat;
 }
 
@@ -44,6 +47,8 @@ bool Material::Bind(RenderPass currentPass /*= RenderPass::Geometry*/) const
         myShaders[currentPass]->BindInt(sampler.first.c_str(), sampler.second.myUnit);
         sampler.second.myTexture->Bind(sampler.second.myUnit);
     }
+
+    myShaders[currentPass]->BindInt("uDirectionalLightDepth", (uint)TextureIndexes::DirectionalLightDepth); // TODO
 
     return true;
 }

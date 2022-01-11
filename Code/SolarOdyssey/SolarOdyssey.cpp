@@ -20,6 +20,12 @@
 #include "Rendering/SolarOdysseyRenderer.h"
 #include "Physics/CollisionShapes.h"
 
+#include "SolarSystem/Planet.h"
+#include "Player/Player.h"
+#include "Audio/AudioManager.h"
+
+#include <chrono>
+
 #include "SolarOdyssey.h"
 
 #if !GE_FINAL
@@ -29,7 +35,21 @@
 using namespace std::chrono_literals;
 constexpr std::chrono::nanoseconds TIMESTEP(16ms);
 
-SolarOdyssey::SolarOdyssey()
+namespace SolarOdyssey
+{
+    SPtr<SolarOdysseyRenderer> ourRenderer;
+    SPtr<Planet> ourPlanet;
+    SPtr<Player> ourPlayer;
+    SPtr<RigidbodyDynamic> locBoxRigidbody;
+    SPtr<Mesh> locBoxMesh;
+    SPtr<Mesh> locBoatMesh;
+
+    bool locIsRunning;
+    std::chrono::high_resolution_clock::time_point locTimeStartTick;
+    std::chrono::high_resolution_clock::time_point locTimeStart;
+}
+
+void SolarOdyssey::Initialize()
 {
     srand(static_cast <unsigned> (time(0)));
 
@@ -51,28 +71,29 @@ SolarOdyssey::SolarOdyssey()
 
     Renderer::Initialize();
     MaterialLibrary::LoadFromJSON("Data/SolarOdyssey/Materials.json");
-    Renderer::ourCustomRenderer = MakeShared<SolarOdysseyRenderer>();
 
-    Window::ourCloseEvent.Subscribe(this, [&]() { myIsRunning = false; });
+    ourRenderer = MakeShared<SolarOdysseyRenderer>();
+    Renderer::ourCustomRenderer = ourRenderer;
+
+    Window::ourCloseEvent.Subscribe(SolarOdyssey::Initialize, [&]() { locIsRunning = false; });
 
     //////////////////////////////////////////////////////////////////////////
 
-    AudioManager::GetSound("Data/SolarOdyssey/Sounds/Ambient.ogg", myAmbientSound);
-    AudioManager::Play(myAmbientSound);
-    AudioManager::SetLooping(myAmbientSound, true);
+    locBoxMesh = Mesh::Create("Data/GrumpyEngine/Models/Cube.glb");
+    locBoatMesh = Mesh::Create("Data/SolarOdyssey/Models/Boat.glb");
 
-    myPlayer = MakeShared<Player>();
-    myPlanet = MakeShared<Planet>();
-    myBoxRigidbody = MakeShared<RigidbodyDynamic>(10.0f, BoxShape(0.5, 0.5, 0.5), Vec3(0, 210, 0));
+    ourPlayer = MakeShared<Player>();
+    ourPlanet = MakeShared<Planet>();
+    locBoxRigidbody = MakeShared<RigidbodyDynamic>(10.0f, BoxShape(0.5, 0.5, 0.5), Vec3(0, 60, 0));
 
     Run();
 }
 
-SolarOdyssey::~SolarOdyssey()
+void SolarOdyssey::Shutdown()
 {
-    myBoxRigidbody.reset();
-    myPlanet.reset();
-    myPlayer.reset();
+    locBoxRigidbody.reset();
+    ourPlanet.reset();
+    ourPlayer.reset();
 
 #if GE_PLATFORM_PC
     glfwSetWindowShouldClose(Window::ourWindowHandle, 1);
@@ -96,18 +117,18 @@ void SolarOdyssey::Run()
     using clock = std::chrono::high_resolution_clock;
 
     std::chrono::nanoseconds lag(0ns);
-    myTimeStart = clock::now();
-    myTimeStartTick = clock::now();
+    locTimeStart = clock::now();
+    locTimeStartTick = clock::now();
     auto timeStartFPS = clock::now();
     int internalFPS = 0;
 
     Window::Show();
 
-    myIsRunning = true;
-    while (myIsRunning)
+    locIsRunning = true;
+    while (locIsRunning)
     {
-        std::chrono::duration<float> deltaTimeFrame = clock::now() - myTimeStart;
-        myTimeStart = clock::now();
+        std::chrono::duration<float> deltaTimeFrame = clock::now() - locTimeStart;
+        locTimeStart = clock::now();
         lag += std::chrono::duration_cast<std::chrono::nanoseconds>(deltaTimeFrame);
 
         Window::Update();
@@ -143,14 +164,14 @@ void SolarOdyssey::Run()
 
 void SolarOdyssey::Update(float delta)
 {
-    myPlayer->Update(delta);
+    ourPlayer->Update(delta);
 }
 
 void SolarOdyssey::Render(float delta)
 {
-    Renderer::ourFrameData.AddInstance(Mesh::Create("Data/GrumpyEngine/Models/Cube.glb"), Material::Create("Default"), Math::Translate(myBoxRigidbody->GetPosition()) * Math::Rotate(myBoxRigidbody->GetRotation()));
-    Renderer::ourFrameData.AddInstance(Mesh::Create("Data/SolarOdyssey/Models/Nature/DeadTree.glb"), Material::Create("DeadTree"), Math::Translate(Vec3(-199.9f, -5, 0)) * Math::Rotate(Vec3(0.0f, 0.0f, 90.0f)));
+    Renderer::ourFrameData.AddInstance(locBoxMesh, Material::Create("Default"), Math::Translate(locBoxRigidbody->GetPosition()) * Math::Rotate(locBoxRigidbody->GetRotation()));
+    Renderer::ourFrameData.AddInstance(locBoatMesh, Material::Create("Boat"), Math::Translate(Vec3(-40.9f, 11.0f, -26.0f)) * Math::Rotate(Vec3(5.0f, -30.0f, 60.0f)) * locBoatMesh->myLocalMatrix);
 
-    myPlanet->Render(delta);
-    myPlayer->Render(delta);
+    ourPlanet->Render(delta);
+    ourPlayer->Render(delta);
 }

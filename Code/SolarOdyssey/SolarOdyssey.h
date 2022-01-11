@@ -1,27 +1,20 @@
 #pragma once
 
-#include "SolarSystem/Planet.h"
-#include "Player/Player.h"
-#include "Audio/AudioManager.h"
+struct Planet;
+struct Player;
+struct SolarOdysseyRenderer;
 
-#include <chrono>
-
-struct SolarOdyssey
+namespace SolarOdyssey
 {
-    SolarOdyssey();
-    ~SolarOdyssey();
+    void Initialize();
+    void Shutdown();
 
     void Run();
 
     void Update(float delta);
     void Render(float delta);
 
-    SPtr<Planet> myPlanet;
-    SPtr<Player> myPlayer;
-    SPtr<RigidbodyDynamic> myBoxRigidbody;
-    AudioHandle myAmbientSound;
-
-    bool myIsRunning;
-    std::chrono::high_resolution_clock::time_point myTimeStartTick;
-    std::chrono::high_resolution_clock::time_point myTimeStart;
+    extern SPtr<SolarOdysseyRenderer> ourRenderer;
+    extern SPtr<Planet> ourPlanet;
+    extern SPtr<Player> ourPlayer;
 };

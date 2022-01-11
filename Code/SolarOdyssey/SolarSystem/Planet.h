@@ -17,6 +17,8 @@ struct Planet
     void DebugRender();
 #endif
 
+    float GetNoiseFromUnitPosition(const Vec3& unitPos) const;
+
     struct TerrainFace
     {
         TerrainFace(int resolution, Vec3 localUp)
@@ -35,7 +37,7 @@ struct Planet
             myAxisB = glm::cross(myLocalUp, myAxisA);
         }
 
-        void ConstructMesh(const SimplexNoise& noise, const Planet& planet);
+        void ConstructMesh(const Planet& planet);
 
         MeshDesc myMeshDescription;
         SPtr<Mesh> myMesh;
@@ -61,8 +63,8 @@ struct Planet
     //NoiseParams myMountainMaskParams;
     NoiseParams myElevationParams;
 
-    int myResolution = 250;
-    float myPlanetSize = 200.0f;
+    int myResolution = 50;
+    float myPlanetSize = 50.0f;
     float myWaterLevel = 190.0f;
 
     float myTextureScale = 1.0f;

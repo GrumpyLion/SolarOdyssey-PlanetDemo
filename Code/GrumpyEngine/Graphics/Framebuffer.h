@@ -17,6 +17,7 @@ struct Framebuffer
     Framebuffer(const FramebufferDesc& desc);
     ~Framebuffer();
 
+    void Finalize();
     void Bind();
     void Unbind();
     void AddAttachment(const char* name, SPtr<Texture> texture);

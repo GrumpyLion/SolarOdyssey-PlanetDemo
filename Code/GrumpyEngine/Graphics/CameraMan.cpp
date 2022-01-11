@@ -10,7 +10,9 @@ struct CameraBuffer
     Mat4 myProjectionMatrix = Mat4(1.0f);
     Mat4 myPrevProjectionMatrix = Mat4(1.0f);
     Mat4 myViewMatrix = Mat4(1.0f);
+    Mat4 myViewMatrixCentered = Mat4(1.0f);
     Mat4 myPrevViewMatrix = Mat4(1.0f);
+    Mat4 myPrevViewMatrixCentered = Mat4(1.0f);
     Mat4 myInvProjViewMatrix = Mat4(1.0f);
     Mat4 myInvProjectionMatrix = Mat4(1.0f);
     Mat4 myInvViewMatrix = Mat4(1.0f);
@@ -27,12 +29,14 @@ namespace CameraMan
     Vec3 ourRotation = Vec3(0.0f);
     Mat4 ourProjectionMatrix = Mat4(1.0f);
     Mat4 ourViewMatrix = Mat4(1.0f);
+    Mat4 ourViewMatrixCentered = Mat4(1.0f);
     Mat4 ourInverseProjectionMatrix = Mat4(1.0f);
     Mat4 ourInverseViewMatrix = Mat4(1.0f);
     Mat4 ourInverseProjViewMatrix = Mat4(1.0f);
 
     Mat4 locPrevProjectionMatrix = Mat4(1.0f);
     Mat4 locPrevViewMatrix = Mat4(1.0f);
+    Mat4 locPrevViewMatrixCentered = Mat4(1.0f);
 
     int ourCurrentCamera = 0;
 #if !GE_FINAL
@@ -46,7 +50,7 @@ namespace CameraMan
 
 void CameraMan::Initialize()
 {
-    locCameraBuffer = UniformBuffer::Create(sizeof(CameraBuffer), (uint)UniformBufferIndexes::CameraBuffer, nullptr);
+    locCameraBuffer = UniformBuffer::Create(sizeof(CameraBuffer), (uint)UniformBufferIndexes::CameraBuffer, "Camera Buffer");
 }
 
 void CameraMan::Render(float delta)
@@ -75,6 +79,8 @@ void CameraMan::Render(float delta)
     else
         ourViewMatrix = glm::lookAt(ourPosition, ourPosition + Math::GetForwardVector(ourRotation), Vec3(0.0f, 1.0f, 0.0f));
 
+    ourViewMatrixCentered = glm::lookAt(Vec3(0.0f), Math::GetForwardVector(ourRotation), Vec3(0.0f, 1.0f, 0.0f));
+
     Mat4 inverse = glm::inverse(ourViewMatrix);
     ourPosition = Vec3(inverse[3]);
     ourDirection = Vec3(inverse[2]);
@@ -87,7 +93,11 @@ void CameraMan::Render(float delta)
     buffer.myCameraPos = Vec4(ourPosition, 0.0f);
     buffer.myCameraDir = Vec4(Math::Normalize(ourDirection), 0.0f);
     buffer.myViewMatrix = ourViewMatrix;
+    buffer.myViewMatrixCentered = ourViewMatrixCentered;
     buffer.myProjectionMatrix = ourProjectionMatrix;
+    buffer.myPrevProjectionMatrix = locPrevProjectionMatrix;
+    buffer.myPrevViewMatrix = locPrevViewMatrix;
+    buffer.myPrevViewMatrixCentered = locPrevViewMatrixCentered;
     buffer.myInvProjViewMatrix = ourInverseProjViewMatrix;
     buffer.myInvProjectionMatrix = ourInverseProjectionMatrix;
     buffer.myInvViewMatrix = ourInverseViewMatrix;
@@ -100,6 +110,7 @@ void CameraMan::PostRender()
 {
     locPrevProjectionMatrix = ourProjectionMatrix;
     locPrevViewMatrix = ourViewMatrix;
+    locPrevViewMatrixCentered = ourViewMatrixCentered;
 }
 
 void CameraMan::SetCameraData(uint index, const CameraData& cameraData)

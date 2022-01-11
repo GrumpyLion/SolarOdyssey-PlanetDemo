@@ -4,7 +4,8 @@ struct ShaderDesc
 {
     std::string myVSCode;
     std::string myFSCode;
-    std::string myName;
+    std::string myVSLocation;
+    std::string myFSLocation;
     std::vector<std::string> myDefines;
 };
 
@@ -29,7 +30,7 @@ struct Shader
     void BindMatrix3x3(const char* location, Mat3 value) const;
     void BindMatrix4x4(const char* location, Mat4 value) const;
 
-    std::string GetShaderCode(std::string code) const;
+    std::string GetShaderCode(std::string code, const std::string& filename) const;
     std::string GetIncludeCode(const std::string& line) const;
 
     GLuint myProgram = 0;
